@@ -13,6 +13,7 @@ model User {
   name            String
   createdAt       DateTime         @default(now())
   apiKeys         ApiKey[]
+  usageLogs       UsageLog[]
   usageDaily      UserUsageDaily[]
   usageTotal      UserUsageTotal?
   keyUsageDaily   KeyUsageDaily[]
@@ -34,6 +35,7 @@ model ApiKey {
   createdAt      DateTime     @default(now())
   lastUsedAt     DateTime?
   usageLogs      UsageLog[]
+  cardCodes      CardCode[]
   keyUsageDaily  KeyUsageDaily[]
   keyUsageTotal  KeyUsageTotal?
 }

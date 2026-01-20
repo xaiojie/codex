@@ -81,7 +81,13 @@ export default function UsagePage() {
     });
   }, [timeseries]);
 
-  const models = Object.keys(timeseries);
+  const getProvider = (model: string) => {
+    if (model.startsWith("gpt") || model.match(/^o[1-9]-/) || model.startsWith("dall-e") || model.startsWith("text-") || model.startsWith("tts") || model.startsWith("whisper")) return "OpenAI";
+    if (model.startsWith("claude")) return "Anthropic";
+    if (model.startsWith("gemini") || model.startsWith("veo")) return "Gemini";
+    if (model.startsWith("deepseek") || model.startsWith("grok")) return "Other";
+    return "Other";
+  };
 
   return (
     <div>
@@ -121,12 +127,13 @@ export default function UsagePage() {
             <YAxis />
             <Tooltip />
             <Legend />
-            {models.map((model, index) => (
+            {Object.keys(timeseries).map((model, index) => (
               <Line
                 key={model}
                 type="monotone"
                 dataKey={model}
-                stroke={["#1677ff", "#13c2c2", "#722ed1"][index % 3]}
+                name={`${model} (${getProvider(model)})`}
+                stroke={["#1677ff", "#13c2c2", "#722ed1", "#eb2f96", "#f5222d", "#fa8c16"][index % 6]}
               />
             ))}
           </LineChart>
@@ -147,6 +154,15 @@ export default function UsagePage() {
           columns={[
             { title: "Tool", dataIndex: "tool", render: (value) => value ?? "-" },
             { title: "渠道", dataIndex: "channel", render: (value) => value ?? "-" },
+            { 
+              title: "Provider", 
+              dataIndex: "model",
+              render: (value) => {
+                const p = getProvider(value);
+                const colors: Record<string, string> = { OpenAI: "green", Anthropic: "purple", Gemini: "orange", Other: "default" };
+                return <Tag color={colors[p]}>{p}</Tag>;
+              }
+            },
             { title: "模型", dataIndex: "model" },
             {
               title: "时间",

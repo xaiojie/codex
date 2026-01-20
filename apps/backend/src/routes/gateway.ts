@@ -45,6 +45,22 @@ function detectTool(responseBody: any) {
   return null;
 }
 
+function checkProviderMatch(provider: string, model: string) {
+  if (provider === "all") return true;
+  if (provider === "openai") {
+    // Covers gpt, o1, o3, o4, dall-e, tts, whisper, text-embedding, and potential new prefixes
+    return /^(gpt|o[1-9]|dall-e|tts|whisper|text-embedding)-/.test(model);
+  }
+  if (provider === "anthropic") {
+    return /^claude-/.test(model);
+  }
+  if (provider === "gemini") {
+    // Covers gemini-1.5, gemini-2.5, gemini-3, veo
+    return /^(gemini|veo)-/.test(model);
+  }
+  return false;
+}
+
 export async function registerGatewayRoutes(app: FastifyInstance) {
   async function handler(requestPayload: any, headers: Record<string, string | string[] | undefined>, reply: any) {
     const apiKey = extractApiKey(headers);
@@ -67,11 +83,21 @@ export async function registerGatewayRoutes(app: FastifyInstance) {
     }
 
     if (key.scopes && typeof key.scopes === "object") {
-      const scopeMode = (key.scopes as any).mode;
+      const scopes = key.scopes as any;
+      const scopeMode = scopes.mode;
+      const provider = scopes.provider;
+
       if (scopeMode === "codex-only") {
         const model = requestPayload?.model ?? config.DEFAULT_MODEL;
         if (!String(model).includes("codex")) {
           return sendOpenAIError(reply, 403, "Scope restricted to codex models", "scope_error", "scope_restricted");
+        }
+      }
+
+      if (provider && provider !== "all") {
+        const model = requestPayload?.model ?? config.DEFAULT_MODEL;
+        if (!checkProviderMatch(provider, model)) {
+          return sendOpenAIError(reply, 403, `Scope restricted to ${provider} models`, "scope_error", "scope_restricted");
         }
       }
     }
@@ -95,7 +121,7 @@ export async function registerGatewayRoutes(app: FastifyInstance) {
       return sendOpenAIError(reply, 400, "Streaming is not supported in this gateway", "invalid_request_error", "stream_not_supported");
     }
 
-    const upstreamUrl = `${config.UPSTREAM_BASE_URL.replace(/\/$/, "")}/responses`;
+    const upstreamUrl = `${config.UPSTREAM_BASE_URL.replace(/\/$/, "")}/chat/completions`;
     const started = Date.now();
 
     const upstreamResponse = await request(upstreamUrl, {

@@ -1,5 +1,6 @@
 import { Layout, Menu } from "antd";
 import { useState } from "react";
+import ChatPage from "./pages/ChatPage";
 import KeysPage from "./pages/KeysPage";
 import UsagePage from "./pages/UsagePage";
 
@@ -7,6 +8,11 @@ const { Header, Content, Sider } = Layout;
 
 export default function App() {
   const [activeKey, setActiveKey] = useState("keys");
+  const titleMap: Record<string, string> = {
+    keys: "API 密钥管理",
+    usage: "使用统计",
+    chat: "对话测试"
+  };
 
   return (
     <Layout className="layout">
@@ -18,16 +24,19 @@ export default function App() {
           onClick={(e) => setActiveKey(e.key)}
           items={[
             { key: "keys", label: "API 密钥管理" },
-            { key: "usage", label: "使用统计" }
+            { key: "usage", label: "使用统计" },
+            { key: "chat", label: "对话测试" }
           ]}
         />
       </Sider>
       <Layout>
         <Header style={{ background: "#fff", padding: "0 24px" }}>
-          {activeKey === "keys" ? "API 密钥管理" : "使用统计"}
+          {titleMap[activeKey] ?? "API 密钥管理"}
         </Header>
         <Content className="page-content">
-          {activeKey === "keys" ? <KeysPage /> : <UsagePage />}
+          {activeKey === "keys" && <KeysPage />}
+          {activeKey === "usage" && <UsagePage />}
+          {activeKey === "chat" && <ChatPage />}
         </Content>
       </Layout>
     </Layout>

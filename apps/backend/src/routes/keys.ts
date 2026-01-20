@@ -1,12 +1,12 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { createApiKey } from "../services/keyService.js";
+import { createApiKey, regenerateApiKey, validateApiKey } from "../services/keyService.js";
 import { adminAuth } from "../middleware/adminAuth.js";
 
 const createSchema = z.object({
   name: z.string().min(1),
-  scopes: z.record(z.any()).default({ mode: "all" }),
+  provider: z.enum(["all", "openai", "anthropic", "gemini"]).default("all"),
   dailyUsdLimit: z.number().nullable().optional(),
   totalUsdLimit: z.number().nullable().optional(),
   expiresAt: z.string().nullable().optional()
@@ -20,6 +20,10 @@ const updateSchema = z.object({
   expiresAt: z.string().nullable().optional()
 });
 
+const testSchema = z.object({
+  apiKey: z.string().min(1)
+});
+
 export async function registerKeyRoutes(app: FastifyInstance) {
   app.post("/api/keys", { preHandler: adminAuth }, async (request, reply) => {
     const body = createSchema.parse(request.body);
@@ -29,7 +33,7 @@ export async function registerKeyRoutes(app: FastifyInstance) {
     const result = await createApiKey({
       userId: admin.id,
       name: body.name,
-      scopes: body.scopes,
+      scopes: { provider: body.provider },
       dailyUsdLimit: body.dailyUsdLimit ?? null,
       totalUsdLimit: body.totalUsdLimit ?? null,
       expiresAt: body.expiresAt ?? null
@@ -45,6 +49,12 @@ export async function registerKeyRoutes(app: FastifyInstance) {
       status: result.apiKey.status,
       apiKey: result.rawKey
     });
+  });
+
+  app.post("/api/keys/test", { preHandler: adminAuth }, async (request, reply) => {
+    const body = testSchema.parse(request.body);
+    const result = await validateApiKey(body.apiKey);
+    return reply.send({ valid: result.valid, reason: result.reason });
   });
 
   app.get("/api/keys", { preHandler: adminAuth }, async () => {
@@ -89,6 +99,22 @@ export async function registerKeyRoutes(app: FastifyInstance) {
       expiresAt: updated.expiresAt,
       createdAt: updated.createdAt,
       lastUsedAt: updated.lastUsedAt
+    });
+  });
+
+  app.post("/api/keys/:id/regenerate", { preHandler: adminAuth }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const result = await regenerateApiKey(id);
+    return reply.send({
+      id: result.apiKey.id,
+      prefix: result.apiKey.prefix,
+      name: result.apiKey.name,
+      scopes: result.apiKey.scopes,
+      dailyUsdLimit: result.apiKey.dailyUsdLimit,
+      totalUsdLimit: result.apiKey.totalUsdLimit,
+      expiresAt: result.apiKey.expiresAt,
+      status: result.apiKey.status,
+      apiKey: result.rawKey
     });
   });
 
