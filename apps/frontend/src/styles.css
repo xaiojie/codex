@@ -1,0 +1,23 @@
+body {
+  margin: 0;
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f5f6f8;
+}
+
+.layout {
+  min-height: 100vh;
+}
+
+.page-content {
+  padding: 24px;
+}
+
+.card-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.chart-card {
+  margin-top: 16px;
+}

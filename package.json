@@ -1,0 +1,16 @@
+{
+  "name": "codex-forwarder-platform",
+  "private": true,
+  "packageManager": "pnpm@9.12.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "start": "pnpm -r start",
+    "activator": "pnpm --filter @crs/activator start"
+  }
+}
