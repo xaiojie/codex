@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String
+  createdAt       DateTime         @default(now())
+  apiKeys         ApiKey[]
+  usageDaily      UserUsageDaily[]
+  usageTotal      UserUsageTotal?
+  keyUsageDaily   KeyUsageDaily[]
+  keyUsageTotal   KeyUsageTotal[]
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  name           String
+  prefix         String
+  keyHash        String       @unique
+  status         String       @default("active")
+  scopes         Json
+  dailyUsdLimit  Float?
+  totalUsdLimit  Float?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  lastUsedAt     DateTime?
+  usageLogs      UsageLog[]
+  keyUsageDaily  KeyUsageDaily[]
+  keyUsageTotal  KeyUsageTotal?
+}
+
+model CardCode {
+  code        String   @id
+  status      String   @default("unused")
+  boundKeyId  String?
+  boundKey    ApiKey?  @relation(fields: [boundKeyId], references: [id])
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model UsageLog {
+  id               String   @id @default(cuid())
+  requestId        String?
+  keyId            String
+  key              ApiKey   @relation(fields: [keyId], references: [id])
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  tool             String?
+  channel          String?
+  model            String
+  latencyMs        Int
+  createdAt        DateTime @default(now())
+  inputTokens      Int
+  outputTokens     Int
+  cacheTokens      Int
+  totalTokens      Int
+  costUsd          Float
+}
+
+model UserUsageDaily {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  date         String
+  calls        Int      @default(0)
+  costUsd      Float    @default(0)
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  cacheTokens  Int      @default(0)
+  totalTokens  Int      @default(0)
+
+  @@unique([userId, date])
+}
+
+model UserUsageTotal {
+  userId       String  @id
+  user         User    @relation(fields: [userId], references: [id])
+  calls        Int     @default(0)
+  costUsd      Float   @default(0)
+  inputTokens  Int     @default(0)
+  outputTokens Int     @default(0)
+  cacheTokens  Int     @default(0)
+  totalTokens  Int     @default(0)
+}
+
+model KeyUsageDaily {
+  id           String   @id @default(cuid())
+  keyId        String
+  key          ApiKey   @relation(fields: [keyId], references: [id])
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  date         String
+  calls        Int      @default(0)
+  costUsd      Float    @default(0)
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  cacheTokens  Int      @default(0)
+  totalTokens  Int      @default(0)
+
+  @@unique([keyId, date])
+}
+
+model KeyUsageTotal {
+  keyId        String @id
+  key          ApiKey @relation(fields: [keyId], references: [id])
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+  calls        Int    @default(0)
+  costUsd      Float  @default(0)
+  inputTokens  Int    @default(0)
+  outputTokens Int    @default(0)
+  cacheTokens  Int    @default(0)
+  totalTokens  Int    @default(0)
+}

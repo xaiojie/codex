@@ -1,0 +1,10 @@
+node_modules
+pnpm-lock.yaml
+.env
+.env.*
+.DS_Store
+apps/backend/dist
+apps/frontend/dist
+packages/activator/dist
+postgres_data
+redis_data
